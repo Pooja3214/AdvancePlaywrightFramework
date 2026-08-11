@@ -50,8 +50,8 @@ An advanced, production-ready test automation framework built with [Playwright](
 
 ```bash
 # Clone the repository
-git clone https://github.com/Pooja3214/ADVANCEPLAYWRIGHTFRAMEWORK.git
-cd ADVANCEPLAYWRIGHTFRAMEWORK
+git clone https://github.com/Pooja3214/AdvancePlaywrightFramework.git
+cd AdvancePlaywrightFramework
 
 # Install dependencies
 npm install
@@ -153,4 +153,4 @@ This project is for educational and training purposes. See repository for licens
 
 ---
 
-**Repository:** https://github.com/Pooja3214/ADVANCEPLAYWRIGHTFRAMEWORK
+**Repository:** https://github.com/Pooja3214/AdvancePlaywrightFramework
