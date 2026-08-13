@@ -11,6 +11,7 @@
   "devDependencies": {
     "@faker-js/faker": "^10.5.0",
     "@playwright/test": "^1.40.0",
+    "@types/node": "^26.2.0",
     "ajv": "^8.20.0",
     "ajv-formats": "^3.0.1",
     "allure-playwright": "^3.10.2",
@@ -18,7 +19,6 @@
     "dotenv": "^17.4.2",
     "jsonpath-plus": "^10.4.0",
     "typescript": "^5.3.0",
-    "winston": "^3.19.0",
-    "xlsx": "^0.18.5"
+    "winston": "^3.19.0"
   }
 }

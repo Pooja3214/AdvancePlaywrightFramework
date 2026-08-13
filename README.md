@@ -5,12 +5,14 @@ An advanced, production-ready test automation framework built with [Playwright](
 ## Features
 
 - **Playwright + TypeScript** — Modern browser and API automation
+- **Page Object Model (POM)** — Scalable, maintainable UI tests with reusable page classes
 - **Multi-Environment Support** — Easily switch between QA, Stage, Dev, Prod, and API environments via environment variables
 - **GitHub Actions CI/CD** — Automated test runs on push and pull requests
-- **Rich Reporting** — HTML and list reporters with video, screenshot, and trace capture on failures
+- **Rich Reporting** — HTML and list reporters with video, screenshot, and trace capture on failures; custom reporting utilities included
 - **Path Aliases** — Clean imports using `@/*` mapped to `src/*`
 - **Test Data Utilities** — faker-js/faker, CSV, and Excel support for data-driven testing
 - **Logging & Validation** — Winston logger and AJV schema validation included
+- **AI Test Agents** — Built-in agents for flaky test analysis and root-cause detection
 - **Allure Reporting Ready** — allure-playwright dependency available for enhanced reporting
 
 ## Tech Stack
@@ -25,13 +27,25 @@ An advanced, production-ready test automation framework built with [Playwright](
 | @faker-js/faker | Test data generation |
 | csv-parse / xlsx | Data-driven test inputs |
 | allure-playwright | Advanced test reporting |
+| jsonpath-plus | JSON path queries |
 
 ## Project Structure
 
 ```
 .
 ├── .github/workflows/       # CI/CD pipelines
-├── tests/                   # Example Playwright specs
+├── src/
+│   ├── ai/                  # AI-powered test agents (flaky test analyzer, RCA)
+│   ├── api/                 # API test helpers and schemas
+│   ├── config/              # Framework configuration
+│   ├── fixtures/            # Test fixtures and setup
+│   ├── pages/               # Page Object Model (POM) classes
+│   ├── testdata/            # Test data files (CSV, Excel, JSON)
+│   ├── tests/               # Playwright test specs
+│   └── utils/               # Utilities (logger, data generator, custom reporter)
+├── logs/                    # Execution logs (generated, not committed)
+├── reports/                 # HTML reports (generated, not committed)
+├── tta-report/              # Custom test reports (generated, not committed)
 ├── playwright.config.ts     # Playwright configuration
 ├── tsconfig.json            # TypeScript compiler options
 ├── package.json             # Dependencies & scripts
