@@ -40,6 +40,7 @@ export class LoginPage extends BasePage {
         await this.el.fill(this.usernameInput, username);
         await this.el.fill(this.passwordInput, password);
         await this.el.click(this.loginButton);
+        await this.el.waitForPageLoad();
         await expect.poll(async () => (
             this.page.url().includes('/inventory') || await this.errorBox.isVisible()
         )).toBe(true);

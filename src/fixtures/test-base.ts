@@ -21,19 +21,43 @@
  * `loginWithSelectedItem`) perform reusable setup only when a test requests one.
  */
 
-import { test as Base, expect} from '@playwright/test';
+import { test as base, expect } from '@playwright/test';
 import { LoginPage } from '@pages/LoginPage';
 import { InventoryPage } from '@pages/InventoryPage';
+import { ItemDetailPage } from '@pages/ItemDetailPage';
 import { CartPage } from '@pages/CartPage';
 import { CheckoutStepOnePage } from '@pages/CheckoutStepOnePage';
 import { CheckoutStepTwoPage } from '@pages/CheckoutStepTwoPage';
 import { CheckoutCompletePage } from '@pages/CheckoutCompletePage';
-import { ItemDetailPage } from '@pages/ItemDetailPage';
-import { In } from '@faker-js/faker/dist/index-BSUsvzGS';
+import loginTestData from '@testdata/logintestdata.json';
 
-export type TestFixture= {
+type LoginRecord = {
+    username: string;
+    password: string;
+};
 
-    //Page Objects
+export type InvalidLoginState = {
+    loginPage: LoginPage;
+    username: string;
+};
+
+export type SelectedItemState = {
+    inventoryPage: InventoryPage;
+    itemId: string;
+};
+
+const users = loginTestData as LoginRecord[];
+const validUser = users.find(({ username }) => username === 'standard_user');
+const invalidUser = users.find(({ username }) => username === 'locked_out_user');
+const SELECTED_ITEM_ID = 'test-allthethings-tshirt-red';
+
+if (!validUser || !invalidUser) {
+    throw new Error('Required standard_user and locked_out_user test data is missing');
+}
+
+export type TestFixture = {
+
+    // Page Objects
     loginPage: LoginPage;
     inventoryPage: InventoryPage;
     itemDetailPage: ItemDetailPage;
@@ -42,39 +66,69 @@ export type TestFixture= {
     checkoutStepTwoPage: CheckoutStepTwoPage;
     checkoutCompletePage: CheckoutCompletePage;
 
-
+    // Ready-to-use application states
+    invalidLogin: InvalidLoginState;
+    validLogin: LoginPage;
+    loginWithInventory: InventoryPage;
+    loginWithSelectedItem: SelectedItemState;
 };
 
-export const test= Base.extend<TestFixture>({
+export const test = base.extend<TestFixture>({
 
-    loginPage:async({page}, use)=>{
+    loginPage: async ({ page }, use) => {
         await use(new LoginPage(page));
     },
-
-    inventoryPage: async({page}, use)=>{
+    inventoryPage: async ({ page }, use) => {
         await use(new InventoryPage(page));
     },
-
-    itemDetailPage: async({page}, use)=>{
+    itemDetailPage: async ({ page }, use) => {
         await use(new ItemDetailPage(page));
     },
-
-    cartPage: async({page}, use)=>{
+    cartPage: async ({ page }, use) => {
         await use(new CartPage(page));
     },
-
-    checkoutCompletePage: async({page}, use)=>{
+    checkoutStepOnePage: async ({ page }, use) => {
+        await use(new CheckoutStepOnePage(page));
+    },
+    checkoutStepTwoPage: async ({ page }, use) => {
+        await use(new CheckoutStepTwoPage(page));
+    },
+    checkoutCompletePage: async ({ page }, use) => {
         await use(new CheckoutCompletePage(page));
     },
 
-    checkoutStepOnePage: async({page}, use)=>{
-        await use(new CheckoutStepOnePage(page));
+    // Independent negative state: the locked-out account remains on login.
+    invalidLogin: async ({ page, loginPage }, use) => {
+        await loginPage.open();
+        await loginPage.loginAs(invalidUser.username, invalidUser.password);
+        await expect(page.locator('[data-test="error"]')).toBeVisible();
+        await use({ loginPage, username: invalidUser.username });
     },
 
-    checkoutStepTwoPage: async({page}, use)=>{
-        await use(new CheckoutStepTwoPage(page));
-    }
+    // Successful authentication state.
+    validLogin: async ({ loginPage }, use) => {
+        await loginPage.open();
+        await loginPage.loginAs(validUser.username, validUser.password);
+        await loginPage.waitForLoginButtonHidden();
+        await use(loginPage);
+    },
 
+    // Depends on validLogin and guarantees that inventory is loaded.
+    loginWithInventory: async ({ validLogin, inventoryPage }, use) => {
+        void validLogin;
+        await inventoryPage.assertLoaded();
+        await use(inventoryPage);
+    },
+
+    // Depends on inventory and guarantees that one item is in the cart.
+    loginWithSelectedItem: async ({ loginWithInventory }, use) => {
+        await loginWithInventory.addToCart(SELECTED_ITEM_ID);
+        await use({
+            inventoryPage: loginWithInventory,
+            itemId: SELECTED_ITEM_ID,
+        });
+    },
+    
 });
 
-export {expect};
+export { expect };

@@ -29,7 +29,7 @@ export class InventoryPage extends BasePage {
     }
 
     async assertLoaded(): Promise<void> {
-        await expect(this.title).toContainText('Products');
+        await expect(this.title).toHaveText('Products');
         await expect.poll(async () => this.items.count()).toBeGreaterThan(3);
     }
 
