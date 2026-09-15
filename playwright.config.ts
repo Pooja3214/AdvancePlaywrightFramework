@@ -3,6 +3,8 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+const ATTACH_SCREENSHOTS = process.env.ATTACH_SCREENSHOTS?.toLowerCase() === 'true';
+
 function resolveBaseURL(): string {
   if (process.env.BASE_URL) return process.env.BASE_URL;
   const env = (process.env.TTA_ENV || 'qa').toLowerCase();
@@ -48,7 +50,8 @@ export default defineConfig({
 
   use: {
     baseURL: resolveBaseURL(),
-    screenshot: 'only-on-failure',
+    headless: false,
+    screenshot: ATTACH_SCREENSHOTS ? 'only-on-failure' : 'off',
     video: 'on',
     trace: 'on'
   },
@@ -56,8 +59,36 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
+      testDir: './src/tests',
+      // API and AI specs live under src/tests but belong to their own projects.
+      // Without this they would also run here, against the UI baseURL and a real browser.
+      testIgnore: ['**/apisTests/**', '**/aiTest/**'],
       use: {
-        ...devices['Desktop Chrome']
+        ...devices['Desktop Chrome'],
+        viewport: { width: 1920, height: 1080 }
+      }
+    },
+    {
+      name: 'api',
+      testDir: './src/tests/apisTests',
+      // No devices[...] spread, so no browser is launched for pure HTTP tests.
+      use: {
+        baseURL: process.env.API_BASE_URL || 'https://restful-booker.herokuapp.com'
+      }
+    },
+    {
+      name: 'ai',
+      testDir: './src/tests/aiTest',
+      // Longer timeout: a model round trip costs seconds, and two of them plus
+      // a retry can exceed the 60s default.
+      timeout: 180_000,
+      use: {
+        // Browser config is declared but the browser is lazy: Playwright only
+        // launches one for a test that actually requests `page`. The API and
+        // data-gen specs here use `request` only and start no browser.
+        ...devices['Desktop Chrome'],
+        viewport: { width: 1920, height: 1080 },
+        baseURL: process.env.API_BASE_URL || 'https://restful-booker.herokuapp.com'
       }
     }
   ]
