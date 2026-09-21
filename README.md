@@ -1,19 +1,23 @@
 # Advance Playwright Framework
 
-An advanced, production-ready test automation framework built with [Playwright](https://playwright.dev/) and TypeScript. It supports UI and API testing across multiple environments with built-in reporting, CI/CD integration, and scalable project structure.
+An advanced, production-ready test automation framework built with [Playwright](https://playwright.dev/) and TypeScript. It supports UI and API testing across multiple environments with built-in reporting, CI/CD integration, and a scalable project structure.
 
 ## Features
 
 - **Playwright + TypeScript** — Modern browser and API automation
 - **Page Object Model (POM)** — Scalable, maintainable UI tests with reusable page classes
+- **Layered API Testing** — A raw-request suite, a reusable `ApiHelper`, a typed `BookingApi` service layer, and fixture-driven end-to-end flows
 - **Multi-Environment Support** — Easily switch between QA, Stage, Dev, Prod, and API environments via environment variables
 - **GitHub Actions CI/CD** — Automated test runs on push and pull requests
-- **Rich Reporting** — HTML and list reporters with video, screenshot, and trace capture on failures; custom reporting utilities included
-- **Path Aliases** — Clean imports using `@/*` mapped to `src/*`
+- **Rich Reporting** — HTML, list, and a custom reporter with video, screenshot, and trace capture on failures
+- **Path Aliases** — Clean imports using `@api/*`, `@config/*`, `@fixtures/*`, `@pages/*`, `@testdata/*`, and `@utils/*`
 - **Test Data Utilities** — faker-js/faker, CSV, and Excel support for data-driven testing
-- **Logging & Validation** — Winston logger and AJV schema validation included
+- **Runtime Schema Validation** — AJV + ajv-formats checks that API responses match their JSON schemas
+- **JSONPath Queries** — `jsonpath-plus` helpers for extracting values from nested responses
+- **Logging** — Winston logger included
 - **AI Test Agents** — Built-in agents for flaky test analysis and root-cause detection
 - **Allure Reporting Ready** — allure-playwright dependency available for enhanced reporting
+- **Reference Docs** — In-depth write-ups under [`docs/`](docs/), including the [Playwright Worker guide](docs/Playwright-Worker.md)
 
 ## Tech Stack
 
@@ -23,7 +27,7 @@ An advanced, production-ready test automation framework built with [Playwright](
 | TypeScript | Type-safe test code |
 | dotenv | Environment configuration |
 | Winston | Logging |
-| AJV | JSON schema validation |
+| AJV + ajv-formats | Runtime JSON schema validation |
 | @faker-js/faker | Test data generation |
 | csv-parse / xlsx | Data-driven test inputs |
 | allure-playwright | Advanced test reporting |
@@ -33,24 +37,34 @@ An advanced, production-ready test automation framework built with [Playwright](
 
 ```
 .
-├── .github/workflows/       # CI/CD pipelines
+├── .github/workflows/         # CI/CD pipelines
+├── docs/                      # Reference documentation and Postman collection
+├── rules/                     # Shared team rules and conventions
 ├── src/
-│   ├── ai/                  # AI-powered test agents (flaky test analyzer, RCA)
-│   ├── api/                 # API test helpers and schemas
-│   ├── config/              # Framework configuration
-│   ├── fixtures/            # Test fixtures and setup
-│   ├── pages/               # Page Object Model (POM) classes
-│   ├── testdata/            # Test data files (CSV, Excel, JSON)
-│   ├── tests/               # Playwright test specs
-│   └── utils/               # Utilities (logger, data generator, custom reporter)
-├── logs/                    # Execution logs (generated, not committed)
-├── reports/                 # HTML reports (generated, not committed)
-├── tta-report/              # Custom test reports (generated, not committed)
-├── playwright.config.ts     # Playwright configuration
-├── tsconfig.json            # TypeScript compiler options
-├── package.json             # Dependencies & scripts
-├── .env                     # Environment variables (not committed)
-└── .gitignore               # Git ignore rules
+│   ├── ai/                    # AI-powered test agents (flaky test analyzer, RCA)
+│   ├── api/                   # API service layer (e.g. BookingApi)
+│   ├── config/                # Framework configuration and env helpers
+│   ├── fixtures/              # Test fixtures and setup (UI base + booker fixture)
+│   ├── pages/                 # Page Object Model (POM) classes
+│   ├── testdata/              # Test data files (JSON, CSV, Excel) and JSON schemas
+│   ├── tests/
+│   │   ├── apisTests/         # API test suites (see API Testing below)
+│   │   │   ├── 01_restfulbooker_raw/            # Raw Playwright request specs
+│   │   │   ├── 02_restfulbooker_apiHelper/      # Specs built on ApiHelper
+│   │   │   ├── 03_restfulbooker_fixture_e2e_api/# Fixture-driven e2e CRUD flows
+│   │   │   ├── 04_jsonpath_plus/                # JSONPath query examples
+│   │   │   └── 05_ajv_json_schema/              # AJV schema validation specs
+│   │   ├── e2e/               # UI end-to-end checkout specs
+│   │   └── login/             # UI login specs
+│   └── utils/                 # Utilities (ApiHelper, SchemaValidator, logger, reporter)
+├── logs/                      # Execution logs (generated, not committed)
+├── reports/                   # HTML reports (generated, not committed)
+├── tta-report/                # Custom test reports (generated, not committed)
+├── playwright.config.ts       # Playwright configuration
+├── tsconfig.json              # TypeScript compiler options
+├── package.json               # Dependencies & scripts
+├── .env                       # Environment variables (not committed)
+└── .gitignore                 # Git ignore rules
 ```
 
 ## Getting Started
@@ -95,6 +109,36 @@ PASSWORD=ADMIN123
 
 > **Note:** Never commit `.env` files containing credentials to version control.
 
+## API Testing
+
+The API suites target [restful-booker](https://restful-booker.herokuapp.com) and build up in layers, from raw requests to a typed service object:
+
+| Suite | What it covers |
+|-------|----------------|
+| `01_restfulbooker_raw/` | Raw Playwright `request` calls: ping, POST, PUT, new-context usage, and a serial CRUD flow |
+| `02_restfulbooker_apiHelper/` | The same operations wrapped in `ApiHelper` for create and update flows |
+| `03_restfulbooker_fixture_e2e_api/` | Fixture-based end-to-end CRUD, plus negative cases (bad token, missing booking) |
+| `04_jsonpath_plus/` | Extracting nested response values with JSONPath (`jsonpath-plus`) |
+| `05_ajv_json_schema/` | Validating responses against JSON schemas at runtime with AJV |
+
+**Building blocks**
+
+- `src/utils/ApiHelper.ts` — Generic HTTP client wrapping `APIRequestContext` with GET/POST/PUT/PATCH/DELETE, query-param building, retry/polling, and response helpers (`isSuccess`, `parseJsonResponse`).
+- `src/api/BookingApi.ts` — Typed service over `ApiHelper` for the booking domain, with a managed token lifecycle (auto re-auth on a 403) and typed payload/response interfaces.
+- `src/fixtures/booker.fixture.ts` — Extends the Playwright test with `bookingApi` and a generated `bookerToken` fixture.
+- `src/utils/SchemaValidator.ts` — AJV-based `validate`/`assertValid` helpers that report every schema violation at once.
+- `src/testdata/booking.data.ts` and `src/testdata/schemas/` — Booking data builders and JSON schemas.
+
+**Run the API suite**
+
+```bash
+# Whole API project (no browser launched)
+npx playwright test --project=api
+
+# A single suite
+npx playwright test src/tests/apisTests/03_restfulbooker_fixture_e2e_api/ --project=api
+```
+
 ## Running Tests
 
 ```bash
@@ -109,18 +153,31 @@ npm run test:debug
 
 # Show HTML report
 npm run report
+
+# Run a specific project or folder
+npx playwright test --project=api
+npx playwright test src/tests/apisTests/ --project=api
 ```
 
 ## Configuration
 
 ### Playwright Config (`playwright.config.ts`)
 
+- **testDir:** `./src/tests`
 - **baseURL** dynamically resolves based on `TTA_ENV` or `BASE_URL` environment variable
 - **Timeout:** 60s per test, 10s for expect assertions
 - **Retries:** 2 retries in CI, 0 locally
-- **Reporters:** HTML + list
-- **Artifacts:** Screenshot on failure, video on, trace on first retry
-- **Browser:** Chromium (Desktop Chrome)
+- **Parallelism:** `fullyParallel: true` (tests run in parallel even within the same file)
+- **Reporters:** HTML, list, and a custom reporter (`src/utils/CustomReporter.ts`)
+- **Artifacts:** Screenshot on failure (opt-in via `ATTACH_SCREENSHOTS`), video on, trace on
+
+### Projects
+
+| Project | testDir | Notes |
+|---------|---------|-------|
+| `chromium` | `./src/tests` | UI tests; ignores `apisTests` and `aiTest`, Desktop Chrome at 1920x1080 |
+| `api` | `./src/tests/apisTests` | Pure HTTP; no browser devices, baseURL from `API_BASE_URL` |
+| `ai` | `./src/tests/aiTest` | AI agent specs; longer 180s timeout |
 
 ### Supported Environments
 
@@ -131,6 +188,19 @@ npm run report
 | `dev` / `local` | `http://localhost:3000` |
 | `prod` / `production` | `https://app.thetestingacademy.com` |
 | `api` | `https://restful-booker.herokuapp.com` |
+
+### Path Aliases
+
+Defined in `tsconfig.json`:
+
+| Alias | Maps to |
+|-------|---------|
+| `@api/*` | `src/api/*` |
+| `@config/*` | `src/config/*` |
+| `@fixtures/*` | `src/fixtures/*` |
+| `@pages/*` | `src/pages/*` |
+| `@testdata/*` | `src/testdata/*` |
+| `@utils/*` | `src/utils/*` |
 
 ## CI/CD
 
@@ -143,6 +213,13 @@ This project includes a GitHub Actions workflow (`.github/workflows/playwright.y
 5. Uploads the HTML report as an artifact (retained for 30 days)
 
 Triggers: `push` and `pull_request` on `main` and `master` branches.
+
+## Documentation
+
+- [Playwright Worker Lanes](docs/Playwright-Worker.md) — How parallelism actually behaves on this repo, measured: worker counts, RAM ceilings, and how long a suite will take.
+- [Postman Collection](docs/postman_api_collection/) — Importable collection for the restful-booker API.
+- [JSONPath Cheatsheet](src/tests/apisTests/04_jsonpath_plus/jsonpath-cheatsheet.md) — Common JSONPath patterns used in the suite.
+- [AJV Notes](src/tests/apisTests/05_ajv_json_schema/Notes.md) — Notes on runtime schema validation.
 
 ## Scripts
 
@@ -171,4 +248,4 @@ This project is for educational and training purposes. See repository for licens
 
 ---
 
-*Last updated: August 2026*
+*Last updated: September 2026*
