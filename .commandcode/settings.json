@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Shell(git:*)",
+      "Shell(git commit -F - <<'EOF' Add API helper, fixtures, and schema validation tests - Add BookingApi helper and booker fixture for Restful Booker API tests - Add booking test data and create-booking JSON schema - Add API helper CRUD specs (create/update booking) - Add fixture-based e2e CRUD and negative booking specs - Add JSONPath query specs with cheatsheet and store data - Add AJV JSON schema validation specs with notes - Add SchemaValidator util and Playwright worker docs - Add Postman API collection Co-authored-by: CommandCodeBot <noreply@commandcode.ai> EOF)"
+    ],
+    "deny": [],
+    "defaultMode": "default"
+  }
+}
